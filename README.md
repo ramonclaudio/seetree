@@ -6,11 +6,27 @@
 [![Release](https://img.shields.io/github/v/release/ramonclaudio/seetree)](https://github.com/ramonclaudio/seetree/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Most of the time while Claude is working, I'm not actually looking at the editor. I'll ask for something, Claude goes off for a few minutes, and I wait. When I come back to peek at the project, my editor can't really tell me which files Claude just touched. Every dirty file shows the same little modified dot, whether it was edited a second ago or two weeks ago. Touched this session, touched on last month's branch, all the same.
+I usually have atleast four Claude sessions going at once. Each one is doing it's thing, reading, writing and editing files, but my IDE doesn't tell me which files just got touched and what happened. Every git tracked/untracked file shows the same modified dot, whether it was edited a second ago or two weeks ago, I can't tell the difference.
 
-So I built seetree, a live tree viewer that lights up as [Claude Code](https://docs.claude.com/en/docs/claude-code) touches files. Each tool gets its own badge: `[Read]`, `[Write]`, `[Edit]`, `[Bash]`. Mutations flash a `+N -M` diff chip; deletions leave a `× name [Delete]` ghost at the bottom for a few seconds before falling off. Colors fade so "just now" looks different from "earlier in the session." Click a name to open it in your editor. Search and click-to-collapse work; it stays usable as a plain tree viewer when Claude's off.
+So I built seetree, a live tree viewer for [Claude Code](https://docs.claude.com/en/docs/claude-code) sessions. Files light up as Claude touches them and you can see whats happening in real-time. Use arrow keys or the cursor to navigate, click on any file or directory to jump to it in your editor, all while Claude is working:
 
-seetree is also my first project in Zig. I picked it for no runtime deps, instant startup, and a tiny binary. Also wanted an excuse to learn it. The build side ended up where I wanted: around 200K depending on target, libc-only on macOS, fully static on Linux musl. Tested in Ghostty (where I live), iTerm2, and Kitty. The Zig itself is a first pass and probably has corners that aren't idiomatic to anyone who actually writes Zig for a living. PRs welcome.
+```
+  ▾ my-project
+  ├─ ▾ src
+  │  ├─ index.ts                [Read]
+  │  ├─ auth.ts        +12 -3   [Edit]
+  │  ├─ utils.ts       +47 -0  [Write]
+  │  └─ types.ts
+  ├─ package.json               [Bash]
+  └─ README.md
+  × old-config.json [Delete]
+```
+
+When Claude's off, it's just a plain tree viewer.
+
+seetree is also my first project in Zig. The whole thing was an experiment. See how far I could push Zig, see how small and fast I could go, see if I could beat tree, fd, and eza on the metrics I cared about. Also wanted an excuse to build something in Zig for the first time.
+
+I went deep on tiny. As close to wasm as possible. The binaries ended up around 200K depending on target.
 
 ![seetree demo](.github/assets/demo.webp)
 
@@ -22,7 +38,7 @@ Homebrew (macOS + Linuxbrew):
 brew install ramonclaudio/tap/seetree
 ```
 
-Or tap once and use the short form thereafter:
+Or tap once and use the short form after that:
 
 ```bash
 brew tap ramonclaudio/tap
@@ -42,7 +58,7 @@ One-liner for anyone not on brew or npm (auto-detects platform, verifies sha256)
 curl -fsSL https://raw.githubusercontent.com/ramonclaudio/seetree/main/install.sh | bash
 ```
 
-Or grab a prebuilt from the [releases page](https://github.com/ramonclaudio/seetree/releases/latest) directly:
+Or grab a prebuilt from the [releases page](https://github.com/ramonclaudio/seetree/releases/latest):
 
 ```
 seetree-aarch64-macos
@@ -97,7 +113,7 @@ seetree --install-hook --apply   # edits ~/.claude/settings.json (saves .bak)
 seetree --install-hook           # or prints the JSON to paste yourself
 ```
 
-With the hook wired, seetree drops its poll rate to 30s and refreshes on every `FileChanged` event instead. Idempotent, so running `--apply` twice is a no-op.
+With the hook wired, seetree drops its poll rate to 30s and refreshes on every `FileChanged` event instead. Running `--apply` twice is safe. It just no-ops.
 
 ## Editor
 
@@ -109,7 +125,7 @@ SEETREE_EDITOR=code     # VS Code (also: vscode)
 SEETREE_EDITOR=zed      # default
 ```
 
-Or override the command outright:
+Or set the full command yourself:
 
 ```bash
 SEETREE_OPEN_CMD="code -g"
@@ -117,7 +133,7 @@ SEETREE_OPEN_CMD="code -g"
 
 ## Ignoring files
 
-seetree reads `.gitignore` at the project root by default. Drop a `.seetreeignore` next to it (same syntax) to hide files from seetree's view without changing what git tracks. Useful for lockfiles, vendored junk, generated SQL dumps, anything you want out of the live tree but kept under version control.
+seetree reads `.gitignore` at the project root by default. Drop a `.seetreeignore` next to it (same syntax) to hide files from seetree's view without changing what git tracks. Good for lockfiles, vendored junk, generated SQL dumps, anything you want out of the live tree but still under version control.
 
 ```
 # .seetreeignore
@@ -127,11 +143,11 @@ package-lock.json
 vendor/
 ```
 
-Patterns are loaded from the project root only. Nested `.seetreeignore` files in subdirectories aren't picked up, unlike git.
+Only the root `.seetreeignore` is read. Nested ones in subdirectories aren't picked up, unlike git.
 
 ## Performance
 
-Measured on Apple M4 Pro (12 cores, 24 GB RAM, macOS 26.4.1) with hyperfine 1.20.0, `--shell=none`, 20 warmup runs, 200 measured runs (down to 5 runs at 1M to keep total bench time reasonable). Tool versions: seetree 0.1.0 (ReleaseSafe), GNU tree 2.3.2, eza 0.23.4, fd 10.4.2.
+All numbers are from an Apple M4 Pro (12 cores, 24 GB RAM, macOS 26.4.1). hyperfine 1.20.0 with `--shell=none`, 20 warmup runs and 200 measured runs. Dropped to 5 runs at 1M so the bench wouldn't take all day. Tool versions: seetree 0.1.0 (ReleaseSafe), GNU tree 2.3.2, eza 0.23.4, fd 10.4.2.
 
 `seetree --once`, cold start on synthetic uniform trees:
 
@@ -146,7 +162,7 @@ Measured on Apple M4 Pro (12 cores, 24 GB RAM, macOS 26.4.1) with hyperfine 1.20
 1,000,000 files     694.7 ms ± 8.1
 ```
 
-Same workload, same machine, alongside other tree-printers and dir-walkers. These tools do slightly different jobs (`tree` prints a hierarchy, `fd` just lists files, `eza --tree` adds metadata and colors, `seetree --once` builds a tree and prints it with terminal hyperlinks), so this is wall time to walk and print, not raw filesystem traversal cost:
+Same workload, same machine, against other tree-printers and dir-walkers. These all do slightly different things. `tree` prints a hierarchy. `fd` just lists files. `eza --tree` adds metadata and colors. `seetree --once` builds a tree and prints it with terminal hyperlinks. So this is wall time to walk and print, not raw filesystem traversal cost:
 
 ```
                      5K files   50K files  100K files  500K files   1M files
@@ -156,7 +172,7 @@ tree (GNU)           24.2 ms    228.9 ms   463.3 ms   4,676 ms      n/a
 eza --tree           43.4 ms    338.8 ms   622.2 ms   6,301 ms      n/a
 ```
 
-(`tree` and `eza` on the 1M case weren't completed; `eza` was running over 30s per iteration.)
+(`tree` and `eza` didn't finish the 1M case. `eza` was running over 30s per iteration.)
 
 Memory at scale, `--once`, peak RSS:
 
@@ -169,7 +185,7 @@ Memory at scale, `--once`, peak RSS:
 
 About 240 bytes per node in the tree arena. For typical project repos (under 50K files), seetree stays under 5 MB.
 
-Live mode under continuous file churn, 200-file tree, 1-second tick: ~2 MB RSS steady-state, <0.5% CPU, single-threaded.
+Live mode with continuous churn (200-file tree, 1-second tick): ~2 MB RSS steady-state, <0.5% CPU, single-threaded.
 
 Binary, clean release build:
 
@@ -191,16 +207,12 @@ eza                1,231 KB
 fd                 2,868 KB
 ```
 
-Zero leaks across `--once`, the live loop, and the test suite, verified with `zig build test` (DebugAllocator) and macOS `leaks --atExit` against a backgrounded live run with file churn.
+Zero leaks across `--once`, the live loop, and the test suite. Verified with `zig build test` (DebugAllocator) and macOS `leaks --atExit` against a backgrounded live run with file churn.
 
 ## Themes
 
-`claude` (default), `mono`, `gruvbox`, `nord`, `dracula`, `tokyo-night`, `catppuccin`, `rose-pine`, `solarized`. Press `t` to cycle at runtime, or set `--theme=NAME` / `SEETREE_THEME` at launch.
+`claude` (default), `mono`, `gruvbox`, `nord`, `dracula`, `tokyo-night`, `catppuccin`, `rose-pine`, `solarized`. Press `t` to cycle at runtime. Or set `--theme=NAME` or `SEETREE_THEME` at launch.
 
 ## License
 
 MIT.
-
-[hello@ramonclaudio.com](mailto:hello@ramonclaudio.com) / [GitHub](https://github.com/ramonclaudio) / [X](https://x.com/ramonclaudio) / [ramonclaudio.com](https://ramonclaudio.com)
-
-Ray
