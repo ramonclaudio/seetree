@@ -1,0 +1,37 @@
+{
+  "name": "seetree",
+  "version": "0.0.0-placeholder",
+  "description": "Live terminal tree viewer that lights up as Claude Code edits files",
+  "homepage": "https://github.com/ramonclaudio/seetree",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ramonclaudio/seetree.git"
+  },
+  "bugs": "https://github.com/ramonclaudio/seetree/issues",
+  "author": "Ray <hello@ramonclaudio.com> (https://ramonclaudio.com)",
+  "license": "MIT",
+  "keywords": [
+    "cli",
+    "tree",
+    "terminal",
+    "claude",
+    "claude-code",
+    "zig",
+    "developer-tools"
+  ],
+  "bin": {
+    "seetree": "bin/seetree.js"
+  },
+  "files": [
+    "bin/"
+  ],
+  "optionalDependencies": {
+    "seetree-darwin-arm64": "0.0.0-placeholder",
+    "seetree-darwin-x64": "0.0.0-placeholder",
+    "seetree-linux-arm64-musl": "0.0.0-placeholder",
+    "seetree-linux-x64-musl": "0.0.0-placeholder"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

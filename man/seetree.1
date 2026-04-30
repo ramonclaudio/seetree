@@ -1,0 +1,150 @@
+.TH SEETREE 1 "2026-04-29" "seetree 0.1.0" "User Commands"
+.SH NAME
+seetree \- live terminal tree viewer that lights up as Claude Code edits files
+.SH SYNOPSIS
+.B seetree
+[\fIoptions\fR]
+[\fIDIR\fR]
+.SH DESCRIPTION
+.B seetree
+shows a live, hyperlinked file tree that tints rows when Claude Code reads or
+writes them, flashes a diff chip on edits, and tags shell calls. Tints fade
+after a few seconds so recent activity stays visually distinct from older
+edits. Without Claude Code activity, it works as a normal directory tree.
+.PP
+With no \fIDIR\fR argument, the current working directory is used.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Show usage and key bindings, then exit.
+.TP
+.B \-\-version
+Print the version and exit.
+.TP
+.B \-\-once
+Print the tree once and exit. No interactive UI.
+.TP
+.B \-\-detach
+Open seetree in a new Ghostty window. macOS only.
+.TP
+.B \-\-side
+Split the current Ghostty terminal to the right and run seetree in the new
+pane. macOS only.
+.TP
+.B \-\-install-hook
+Write the FileChanged hook script and print the JSON snippet to add to
+\fI~/.claude/settings.json\fR. Used together with \fB\-\-apply\fR to edit
+settings directly.
+.TP
+.B \-\-apply
+With \fB\-\-install-hook\fR, edit \fI~/.claude/settings.json\fR in place
+(saves a \fI.bak\fR backup first). Idempotent.
+.TP
+.BI \-\-theme= NAME
+Color scheme. One of: \fBclaude\fR (default), \fBmono\fR, \fBgruvbox\fR,
+\fBnord\fR, \fBdracula\fR, \fBtokyo-night\fR, \fBcatppuccin\fR,
+\fBrose-pine\fR, \fBsolarized\fR.
+.TP
+.BR \-l ", " \-\-list
+List known Claude projects sorted by last activity, then exit.
+.SH KEYS
+In the live view:
+.TP
+.BR j ", " k ", " ↓ ", " ↑
+Move selection.
+.TP
+.BR h ", " ← ", " l ", " →
+Collapse / expand, or jump to parent.
+.TP
+.B space
+Toggle collapse on the selected directory.
+.TP
+.B enter
+Open the selected file or directory in your editor.
+.TP
+.BR g ", " G
+Jump to top / bottom.
+.TP
+.BR pgup ", " pgdn
+Page up / page down.
+.TP
+.B t
+Cycle theme.
+.TP
+.B s
+Open the settings popup.
+.TP
+.B /
+Search. Esc to clear, backspace on empty exits.
+.TP
+.B ?
+Help.
+.TP
+.BR q ", " Ctrl-C
+Quit.
+.SH ENVIRONMENT
+.TP
+.B SEETREE_THEME
+Alias for \fB\-\-theme\fR.
+.TP
+.B SEETREE_EDITOR
+\fBzed\fR (default), \fBcursor\fR, or \fBcode\fR.
+.TP
+.B SEETREE_OPEN_CMD
+Full override for the open command. Path is appended.
+.TP
+.B SEETREE_FRESH_MS
+Milliseconds the [Edit]/[Read] chip and diff stay visible after a touch.
+Default 3000.
+.TP
+.B SEETREE_POLL_MS
+Milliseconds between filesystem rescans. Default 2000, drops to 30000 when
+the FileChanged hook is installed.
+.TP
+.B CLAUDE_CONFIG_DIR
+Override the Claude Code config directory. Default \fI~/.claude\fR.
+.SH FILES
+.TP
+.I ~/.claude/projects/*.jsonl
+Claude Code session transcripts that seetree polls for file activity.
+.TP
+.I ~/.claude/hooks/seetree-refresh.sh
+Hook script written by \fB\-\-install-hook\fR.
+.TP
+.I ~/.claude/settings.json
+Claude Code settings, edited by \fB\-\-install-hook \-\-apply\fR.
+.SH EXAMPLES
+Live view of the current directory:
+.PP
+.RS
+.nf
+seetree
+.fi
+.RE
+.PP
+Print the tree once and exit:
+.PP
+.RS
+.nf
+seetree --once ~/code/myproject
+.fi
+.RE
+.PP
+Wire the FileChanged hook for instant updates:
+.PP
+.RS
+.nf
+seetree --install-hook --apply
+.fi
+.RE
+.SH SEE ALSO
+.BR tree (1),
+.BR ls (1)
+.PP
+Claude Code:
+.UR https://docs.claude.com/en/docs/claude-code
+.UE
+.SH AUTHOR
+Ray (https://ramonclaudio.com)
+.SH BUGS
+Report at https://github.com/ramonclaudio/seetree/issues

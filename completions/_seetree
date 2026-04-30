@@ -1,0 +1,20 @@
+#compdef seetree
+
+_seetree() {
+  local -a opts
+  opts=(
+    '(-h --help)'{-h,--help}'[show this help]'
+    '--version[print version]'
+    '--once[print once and exit]'
+    '--detach[open seetree in a new Ghostty window (macOS only)]'
+    '--side[split the current Ghostty terminal to the right (macOS only)]'
+    '--install-hook[write the FileChanged hook config]'
+    '--apply[apply the hook directly to ~/.claude/settings.json (use with --install-hook)]'
+    '--theme=[color scheme]:theme:(claude mono gruvbox nord dracula tokyo-night catppuccin rose-pine solarized)'
+    '(-l --list)'{-l,--list}'[list known Claude projects sorted by last activity]'
+    '*::dir:_path_files -/'
+  )
+  _arguments -s $opts
+}
+
+_seetree "$@"

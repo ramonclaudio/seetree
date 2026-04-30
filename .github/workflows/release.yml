@@ -1,0 +1,163 @@
+name: release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "tag to release (e.g. v0.1.0)"
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - aarch64-macos
+          - x86_64-macos
+          - x86_64-linux-musl
+          - aarch64-linux-musl
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: mlugg/setup-zig@8d6198c65fb0feaa111df26e6b467fea8345e46f # v2.0.5
+      - name: build ${{ matrix.target }}
+        run: |
+          # macOS: ReleaseSafe is smallest (Mach-O has no LTO, and ReleaseSmall
+          # bloats __data via late-bound jump tables on x86_64). Linux: ReleaseSmall
+          # + LTO wins by ~6% over ReleaseSafe.
+          if [[ "${{ matrix.target }}" == *linux* ]]; then
+            zig build --release=small -Dtarget=${{ matrix.target }}
+          else
+            zig build --release=safe -Dtarget=${{ matrix.target }}
+          fi
+          mkdir -p dist
+          cp zig-out/bin/seetree dist/seetree-${{ matrix.target }}
+          chmod +x dist/seetree-${{ matrix.target }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: seetree-${{ matrix.target }}
+          path: dist/seetree-${{ matrix.target }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: dist
+          merge-multiple: true
+      - name: pack extras
+        run: tar -czf dist/seetree-extras.tar.gz completions man
+      - name: checksums
+        working-directory: dist
+        run: sha256sum seetree-* > SHA256SUMS
+      - name: homebrew formula
+        working-directory: dist
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          version="${tag#v}"
+          sha_arm_mac=$(awk '/seetree-aarch64-macos$/{print $1}' SHA256SUMS)
+          sha_x86_mac=$(awk '/seetree-x86_64-macos$/{print $1}' SHA256SUMS)
+          sha_arm_lin=$(awk '/seetree-aarch64-linux-musl$/{print $1}' SHA256SUMS)
+          sha_x86_lin=$(awk '/seetree-x86_64-linux-musl$/{print $1}' SHA256SUMS)
+          sha_extras=$(awk '/seetree-extras\.tar\.gz$/{print $1}' SHA256SUMS)
+          sed \
+            -e "s|VERSION_PLACEHOLDER|$version|g" \
+            -e "s|SHA_AARCH64_MACOS|$sha_arm_mac|" \
+            -e "s|SHA_X86_64_MACOS|$sha_x86_mac|" \
+            -e "s|SHA_AARCH64_LINUX|$sha_arm_lin|" \
+            -e "s|SHA_X86_64_LINUX|$sha_x86_lin|" \
+            -e "s|SHA_EXTRAS|$sha_extras|" \
+            ../packaging/homebrew/seetree.rb > seetree.rb
+      - uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: |
+            dist/seetree-*
+            dist/SHA256SUMS
+            dist/seetree.rb
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+
+      # Push the rendered seetree.rb into the homebrew-tap repo so
+      # `brew install ramonclaudio/tap/seetree` resolves immediately.
+      # Requires HOMEBREW_TAP_TOKEN: a fine-grained PAT with contents:write
+      # on ramonclaudio/homebrew-tap. Skipped silently if the secret isn't
+      # set so the first release doesn't fail before the tap repo exists.
+      - name: bump homebrew-tap
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        if: env.TAP_TOKEN != ''
+        working-directory: dist
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          version="${tag#v}"
+          tap_dir="$(mktemp -d)/homebrew-tap"
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/ramonclaudio/homebrew-tap.git" "$tap_dir"
+          mkdir -p "$tap_dir/Formula"
+          cp seetree.rb "$tap_dir/Formula/seetree.rb"
+          cd "$tap_dir"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/seetree.rb
+          if git diff --cached --quiet; then
+            echo "homebrew-tap: no formula change"
+            exit 0
+          fi
+          git commit -m "seetree ${version}"
+          git push origin HEAD
+
+  npm:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: stage and publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          version="${tag#v}"
+
+          find npm -name package.json -exec sed -i "s/0\.0\.0-placeholder/$version/g" {} \;
+
+          declare -A bin_for=(
+            [seetree-darwin-arm64]=seetree-aarch64-macos
+            [seetree-darwin-x64]=seetree-x86_64-macos
+            [seetree-linux-arm64-musl]=seetree-aarch64-linux-musl
+            [seetree-linux-x64-musl]=seetree-x86_64-linux-musl
+          )
+          for pkg in "${!bin_for[@]}"; do
+            mkdir -p "npm/$pkg/bin"
+            cp "dist/${bin_for[$pkg]}" "npm/$pkg/bin/seetree"
+            chmod +x "npm/$pkg/bin/seetree"
+          done
+
+          cp README.md npm/seetree/README.md
+
+          for d in npm/seetree-*/; do
+            (cd "$d" && npm publish --access public --provenance)
+          done
+          (cd npm/seetree && npm publish --access public --provenance)
