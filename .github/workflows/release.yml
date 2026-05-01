@@ -56,7 +56,14 @@ jobs:
           path: dist
           merge-multiple: true
       - name: pack extras
-        run: tar -czf dist/seetree-extras.tar.gz completions man
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          version="${tag#v}"
+          sed -i \
+            -e "s|VERSION_PLACEHOLDER|$version|g" \
+            -e "s|DATE_PLACEHOLDER|$(date -u +%Y-%m-%d)|" \
+            man/seetree.1
+          tar -czf dist/seetree-extras.tar.gz completions man
       - name: checksums
         working-directory: dist
         run: sha256sum seetree-* > SHA256SUMS
