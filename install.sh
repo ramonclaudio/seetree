@@ -69,9 +69,10 @@ echo "verified sha256: $actual"
 chmod +x "$tmp/seetree"
 
 dest="$PREFIX/bin/seetree"
-if [ -w "$PREFIX/bin" ]; then
+if mkdir -p "$PREFIX/bin" 2>/dev/null && [ -w "$PREFIX/bin" ]; then
   install -m 755 "$tmp/seetree" "$dest"
 else
+  sudo mkdir -p "$PREFIX/bin"
   sudo install -m 755 "$tmp/seetree" "$dest"
 fi
 
