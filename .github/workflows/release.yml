@@ -40,9 +40,7 @@ jobs:
           else
             zig build --release=safe -Dtarget=${{ matrix.target }}
           fi
-          mkdir -p dist
-          cp zig-out/bin/seetree dist/seetree-${{ matrix.target }}
-          chmod +x dist/seetree-${{ matrix.target }}
+          install -D -m 755 zig-out/bin/seetree "dist/seetree-${{ matrix.target }}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: seetree-${{ matrix.target }}
@@ -67,18 +65,14 @@ jobs:
         run: |
           tag="${{ github.event.inputs.tag || github.ref_name }}"
           version="${tag#v}"
-          sha_arm_mac=$(awk '/seetree-aarch64-macos$/{print $1}' SHA256SUMS)
-          sha_x86_mac=$(awk '/seetree-x86_64-macos$/{print $1}' SHA256SUMS)
-          sha_arm_lin=$(awk '/seetree-aarch64-linux-musl$/{print $1}' SHA256SUMS)
-          sha_x86_lin=$(awk '/seetree-x86_64-linux-musl$/{print $1}' SHA256SUMS)
-          sha_extras=$(awk '/seetree-extras\.tar\.gz$/{print $1}' SHA256SUMS)
+          sha() { awk -v f="$1" '$2==f{print $1}' SHA256SUMS; }
           sed \
             -e "s|VERSION_PLACEHOLDER|$version|g" \
-            -e "s|SHA_AARCH64_MACOS|$sha_arm_mac|" \
-            -e "s|SHA_X86_64_MACOS|$sha_x86_mac|" \
-            -e "s|SHA_AARCH64_LINUX|$sha_arm_lin|" \
-            -e "s|SHA_X86_64_LINUX|$sha_x86_lin|" \
-            -e "s|SHA_EXTRAS|$sha_extras|" \
+            -e "s|SHA_AARCH64_MACOS|$(sha seetree-aarch64-macos)|" \
+            -e "s|SHA_X86_64_MACOS|$(sha seetree-x86_64-macos)|" \
+            -e "s|SHA_AARCH64_LINUX|$(sha seetree-aarch64-linux-musl)|" \
+            -e "s|SHA_X86_64_LINUX|$(sha seetree-x86_64-linux-musl)|" \
+            -e "s|SHA_EXTRAS|$(sha seetree-extras.tar.gz)|" \
             ../packaging/homebrew/seetree.rb > seetree.rb
       - uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
         with:
@@ -90,11 +84,8 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: true
 
-      # Push the rendered seetree.rb into the homebrew-tap repo so
-      # `brew install ramonclaudio/tap/seetree` resolves immediately.
-      # Requires HOMEBREW_TAP_TOKEN: a fine-grained PAT with contents:write
-      # on ramonclaudio/homebrew-tap. Skipped silently if the secret isn't
-      # set so the first release doesn't fail before the tap repo exists.
+      # Sync the rendered formula into ramonclaudio/homebrew-tap.
+      # Skipped without HOMEBREW_TAP_TOKEN so forks don't fail.
       - name: bump homebrew-tap
         env:
           TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -150,9 +141,7 @@ jobs:
             [seetree-linux-x64-musl]=seetree-x86_64-linux-musl
           )
           for pkg in "${!bin_for[@]}"; do
-            mkdir -p "npm/$pkg/bin"
-            cp "dist/${bin_for[$pkg]}" "npm/$pkg/bin/seetree"
-            chmod +x "npm/$pkg/bin/seetree"
+            install -D -m 755 "dist/${bin_for[$pkg]}" "npm/$pkg/bin/seetree"
           done
 
           cp README.md npm/seetree/README.md
