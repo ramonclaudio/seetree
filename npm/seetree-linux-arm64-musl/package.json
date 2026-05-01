@@ -1,7 +1,7 @@
 {
   "name": "seetree-linux-arm64-musl",
   "version": "0.0.0-placeholder",
-  "description": "Linux arm64 (musl-static) binary for seetree",
+  "description": "A tiny terminal tree viewer and Claude Code companion. (Linux arm64 musl-static binary)",
   "homepage": "https://github.com/ramonclaudio/seetree",
   "repository": {
     "type": "git",

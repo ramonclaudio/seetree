@@ -81,7 +81,7 @@ fn panicFn(_: []const u8, _: ?usize) noreturn {
 }
 
 const usage =
-    \\seetree: terminal tree view that tints files as Claude Code edits them
+    \\seetree: a tiny terminal tree viewer and Claude Code companion
     \\
     \\usage: seetree [options] [dir]
     \\

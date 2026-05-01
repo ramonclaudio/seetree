@@ -1,7 +1,7 @@
 {
   "name": "seetree-darwin-x64",
   "version": "0.0.0-placeholder",
-  "description": "macOS x64 binary for seetree",
+  "description": "A tiny terminal tree viewer and Claude Code companion. (macOS x64 binary)",
   "homepage": "https://github.com/ramonclaudio/seetree",
   "repository": {
     "type": "git",

@@ -2,6 +2,8 @@
 
 # seetree
 
+A tiny terminal tree viewer and Claude Code companion.
+
 [![CI](https://github.com/ramonclaudio/seetree/actions/workflows/ci.yml/badge.svg)](https://github.com/ramonclaudio/seetree/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/ramonclaudio/seetree)](https://github.com/ramonclaudio/seetree/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
