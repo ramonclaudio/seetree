@@ -8,7 +8,7 @@
 
 I usually have atleast four Claude sessions going at once. Each one is doing it's thing, reading, writing and editing files, but my IDE doesn't tell me which files just got touched and what happened. Every git tracked/untracked file shows the same modified dot, whether it was edited a second ago or two weeks ago, I can't tell the difference.
 
-So I built seetree, a live tree viewer for [Claude Code](https://docs.claude.com/en/docs/claude-code) sessions. Files light up as Claude touches them and you can see whats happening in real-time. Use arrow keys or the cursor to navigate, click on any file or directory to jump to it in your editor, all while Claude is working:
+So I built seetree, a live tree viewer for [Claude Code](https://docs.claude.com/en/docs/claude-code). Files light up as Claude works so you see whats happening in real-time. Use arrow keys or the cursor to navigate, click on any file or directory to jump to it in your editor, all while Claude is working:
 
 ```
   ▾ my-project
