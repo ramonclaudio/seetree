@@ -128,7 +128,7 @@ const usage =
     \\
 ;
 
-const version_str = "seetree 0.1.0\n";
+const version_str = "seetree 0.1.1\n";
 
 const Args = struct {
     dir: ?[]const u8 = null,

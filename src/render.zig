@@ -552,7 +552,7 @@ pub fn chromeTopRows(rows: u16) u16 {
 
 // Box bottom border (1) + status row (1).
 pub const chrome_bottom_rows: u16 = 2;
-pub const version: []const u8 = "v0.1.0";
+pub const version: []const u8 = "v0.1.1";
 
 /// 4-row tree-guy mascot rendered into the top of the box. Rows 0-2 are
 /// foliage (mascot_leaf); row 3 is the trunk (mascot_trunk).
@@ -675,7 +675,7 @@ fn drawSearchPrompt(w: *Writer, cols: u16, query: []const u8) !void {
     }
 }
 
-/// Draw the rounded top border with the title ("seetree v0.1.0 · ~/path")
+/// Draw the rounded top border with the title ("seetree v0.1.1 · ~/path")
 /// embedded between `╭─` and the trailing dashes. Path truncates with a
 /// leading `…` when narrow; drops entirely when even shorter.
 fn drawBoxTop(w: *Writer, root_path: []const u8, home: []const u8, cols: u16) !void {
@@ -690,8 +690,8 @@ fn drawBoxTop(w: *Writer, root_path: []const u8, home: []const u8, cols: u16) !v
 
     // Title forms in priority order. Each "fixed" is the cell count the
     // form needs without the path itself.
-    //   full:    "╭─ seetree v0.1.0 · path "         + "╮"
-    //   no_path: "╭─ seetree v0.1.0 "                + "╮"
+    //   full:    "╭─ seetree v0.1.1 · path "         + "╮"
+    //   no_path: "╭─ seetree v0.1.1 "                + "╮"
     //   no_ver:  "╭─ seetree "                       + "╮"
     //   bare:    "╭"                                 + "╮"  (just dashes)
     const fixed_no_path: u16 = 3 + 8 + @as(u16, @intCast(version.len)) + 1 + 1;
