@@ -1,7 +1,7 @@
 {
   "name": "seetree",
   "version": "0.0.0-placeholder",
-  "description": "Live tree viewer for Claude Code. Files light up while Claude works.",
+  "description": "Live tree viewer for Claude Code.",
   "homepage": "https://github.com/ramonclaudio/seetree",
   "repository": {
     "type": "git",
