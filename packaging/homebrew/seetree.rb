@@ -1,5 +1,5 @@
 class Seetree < Formula
-  desc "Live terminal tree viewer that lights up as Claude Code edits files"
+  desc "Live tree viewer for Claude Code"
   homepage "https://github.com/ramonclaudio/seetree"
   version "VERSION_PLACEHOLDER"
   license "MIT"
